@@ -9,6 +9,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,6 +21,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.HashMap;
@@ -28,7 +31,9 @@ import java.util.UUID;
 public class BeaconActivity extends Activity implements BluetoothAdapter.LeScanCallback {
 
     private static final String TAG = "BeaconActivity";
-    private static final UUID ESTIMOTE_UUID = UUID.fromString("B9407F30-F5F8-466E-AFF9-25556B57FE6D");
+//    private static final UUID ESTIMOTE_UUID = UUID.fromString("B9407F30-F5F8-466E-AFF9-25556B57FE6D");
+    private static final UUID ESTIMOTE_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
 
     private BluetoothAdapter mBluetoothAdapter;
     private HashMap<String, Beacon> mBeacons;
@@ -89,8 +94,8 @@ public class BeaconActivity extends Activity implements BluetoothAdapter.LeScanC
 
         // Cancel any scans in progress
         mHandler.removeCallbacks(mStopRunnable);
-
-
+        mHandler.removeCallbacks(mStartRunnable);
+        mBluetoothAdapter.startLeScan(this);
     }
 
     private Runnable mStartRunnable = new Runnable() {
@@ -99,9 +104,16 @@ public class BeaconActivity extends Activity implements BluetoothAdapter.LeScanC
         }
     };
 
+    private Runnable mStopRunnable = new Runnable() {
+        @Override
+        public void run() {
+            stopScan();
+        }
+    };
+
     private void startScan() {
         // Scan for devices advertising the beacon service
-        mBluetoothAdapter.startLeScan(new UUID[] {BEACON_SERVICE}, this);
+        mBluetoothAdapter.startLeScan(new UUID[] {ESTIMOTE_UUID}, this);
         setProgressBarIndeterminateVisibility(true);
 
         mHandler.postDelayed(mStopRunnable, 5000);
@@ -148,8 +160,24 @@ public class BeaconActivity extends Activity implements BluetoothAdapter.LeScanC
             Log.i(TAG, "Scan Record: " + TextUtils.join(",", records ));
         }
 
+        Beacon beacon = new Beacon(records, device.getAddress(), rssi);
+        mHandler.sendMessage(Message.obtain(null, 0, beacon));
 
     }
+
+    private Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            Beacon beacon = (Beacon) msg.obj;
+            mBeacons.put(beacon.getAddress(), beacon);
+
+            mAdapter.setNotifyOnChange(false);
+            mAdapter.clear();
+            mAdapter.addAll(mBeacons.values());
+            mAdapter.notifyDataSetChanged();
+        }
+
+    };
 
     /**
      * A placeholder fragment containing a simple view.
@@ -183,10 +211,20 @@ public class BeaconActivity extends Activity implements BluetoothAdapter.LeScanC
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_beacon_list, parent, false);
             }
+
+            Beacon beacon = getItem(position);
+
+            TextView nameView = (TextView) convertView.findViewById(R.id.text_name);
+            nameView.setText(beacon.getName());
+
+            TextView addressView = (TextView) convertView.findViewById(R.id.text_address);
+            addressView.setText(beacon.getAddress());
+
+            TextView rssiView = (TextView) convertView.findViewById(R.id.text_rssi);
+            rssiView.setText(String.format("%ddBm", beacon.getSignal()));
+
+            return convertView;
         }
-
-        Beacon beacon = getItem(position);
-
     }
 
 }
