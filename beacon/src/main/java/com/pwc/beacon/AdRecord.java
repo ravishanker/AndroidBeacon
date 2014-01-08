@@ -27,6 +27,7 @@ public class AdRecord {
     private int mType;
     private byte[] mData;
 
+
     public AdRecord(int length, int type, byte[] data) {
         mLength = length;
         mType = type;

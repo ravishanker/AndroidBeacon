@@ -13,7 +13,7 @@
         android:textAppearance="?android:attr/textAppearanceListItem"
         android:textStyle="bold"/>
     <TextView
-        android:id="@+id/text_temperature"
+        android:id="@+id/text_servicedata"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"

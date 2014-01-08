@@ -217,6 +217,9 @@ public class BeaconActivity extends Activity implements BluetoothAdapter.LeScanC
             TextView nameView = (TextView) convertView.findViewById(R.id.text_name);
             nameView.setText(beacon.getName());
 
+            TextView serviceView = (TextView) convertView.findViewById(R.id.text_servicedata);
+            serviceView.setText(String.format("%d", beacon.getMajor()));
+
             TextView addressView = (TextView) convertView.findViewById(R.id.text_address);
             addressView.setText(beacon.getAddress());
 
